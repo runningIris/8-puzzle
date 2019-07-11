@@ -1,0 +1,11 @@
+asspath
+.project
+.settings/
+*.class
+.DS_store
+*.zip
+.idea
+.lift
+*.iml
+out
+
