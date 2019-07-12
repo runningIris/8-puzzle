@@ -1,6 +1,8 @@
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdOut;
 
+import java.util.Iterator;
+
 public class Board {
 
     private final int n;
@@ -15,10 +17,19 @@ public class Board {
 
     // string represention of this board
     public String toString() {
-        return "";
+
+        String r = "";
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                r += (square[i][j] + "  ");
+            }
+            r += "\n";
+        }
+
+        return r;
     }
 
-    // board dimension n (可以是二维、三维、甚至多维？)
+    // board dimension n
     public int dimension() {
         return n;
     }
@@ -28,7 +39,6 @@ public class Board {
         int outOfPlaceNum = 0;
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-
                 if (square[i][j] != i * n + j) {
                     outOfPlaceNum++;
                 }
@@ -46,11 +56,24 @@ public class Board {
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 int current = square[i][j];
-                int x = current % n;
+                // calculate the correct position for the current value
+                if (current == 0) {
+                    continue;
+                }
+                if (current == i * n + j + 1) {
+                    StdOut.println("distance: (" + j + ", " + i + ") " + current + " -> 0");
+                    continue;
+                }
+
+                int ox = current % n;
+
+                int x = ox == 0 ? n - 1 : ox - 1;
                 int y = (current - x) / n;
-                distances += Math.abs(x - i);
-                distances += Math.abs(y - i);
-                StdOut.println("distance: " + (Math.abs(x - i) + Math.abs(y - i)));
+
+                int df = Math.abs(x - j) + Math.abs(y - i);
+
+                distances += df;
+                StdOut.println("distance: (" + j + ", " + i + ") " + current + " -> " + df);
             }
         }
 
@@ -59,6 +82,15 @@ public class Board {
 
     // is this board the goal board?
     public boolean isGoal() {
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (square[i][j] != i * n + j + 1) {
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 
@@ -67,14 +99,20 @@ public class Board {
         return true;
     }
 
-    // all neighboring boards(how to comprehend this? why boards instead of tiles?)
-//    public Iterable<Board> neighbors() {
-//    }
+    // all neighboring boards
+    public Iterable<Board> neighbors() {
+        return new Iterable<Board>() {
+            @Override
+            public Iterator<Board> iterator() {
+                return null;
+            }
+        };
+    }
 
     // a board that is obtained by exchanging any pair of tiles
-    // public Board twin() {
-    //     return new Board();
-    // }
+    public Board twin() {
+        return null;
+    }
 
     // unit testing
     public static void main(String[] args) {
@@ -104,13 +142,9 @@ public class Board {
         }
 
         Board board = new Board(tiles);
-        board.manhattan();
-
-        // for (int i = 0; i < n; i++) {
-        //     for (int j = 0; j < n; j++) {
-        //         StdOut.println(tiles[i][j]);
-        //     }
-        // }
+        int moves = board.manhattan();
+        String r = board.toString();
+        StdOut.println(r);
 
     }
 
