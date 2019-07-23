@@ -1,27 +1,50 @@
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdOut;
 
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Board {
 
     private final int n;
-    private int[][] square;
+    private final int[][] tiles;
+    private int[] flattenTiles;
+    private int inversionCount = 0;
 
     // create a board from an n-by-n array of tiles
     // where tiles[row][col] = tile at (row, col)
     public Board(int[][] tiles) {
         n = tiles.length;
-        square = tiles;
+        this.tiles = tiles;
+        flattenTiles = new int[n * n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                flattenTiles[i * n + j] = tiles[j][i];
+            }
+        }
+
+        for (int i = 0; i < n * n; i++) {
+            for (int j = i + 1; j < n * n; j++) {
+                // StdOut.println(i + ", " + j);
+                if (flattenTiles[i] > 0 && flattenTiles[j] > 0 && flattenTiles[i] > flattenTiles[j]) {
+                    inversionCount++;
+                }
+            }
+        }
+
+        StdOut.println("intersions: " + inversionCount);
+    }
+
+    public boolean isSolvable() {
+        return inversionCount % 2 != 0;
     }
 
     // string represention of this board
     public String toString() {
-
-        String r = "";
+        String r = n + "\n";
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                r += (square[i][j] + "  ");
+                r += (tiles[i][j] + "  ");
             }
             r += "\n";
         }
@@ -37,11 +60,9 @@ public class Board {
     // number of tiles out of place
     public int hamming() {
         int outOfPlaceNum = 0;
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                if (square[i][j] != i * n + j) {
-                    outOfPlaceNum++;
-                }
+        for (int i = 0; i < n * n; i++) {
+            if (flattenTiles[i] != i + 1) {
+                outOfPlaceNum++;
             }
         }
 
@@ -55,13 +76,12 @@ public class Board {
 
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                int current = square[i][j];
+                int current = tiles[i][j];
                 // calculate the correct position for the current value
                 if (current == 0) {
                     continue;
                 }
                 if (current == i * n + j + 1) {
-                    StdOut.println("distance: (" + j + ", " + i + ") " + current + " -> 0");
                     continue;
                 }
 
@@ -70,10 +90,9 @@ public class Board {
                 int x = ox == 0 ? n - 1 : ox - 1;
                 int y = (current - x) / n;
 
-                int df = Math.abs(x - j) + Math.abs(y - i);
+                int distance = Math.abs(x - j) + Math.abs(y - i);
 
-                distances += df;
-                StdOut.println("distance: (" + j + ", " + i + ") " + current + " -> " + df);
+                distances += distance;
             }
         }
 
@@ -83,11 +102,9 @@ public class Board {
     // is this board the goal board?
     public boolean isGoal() {
 
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                if (square[i][j] != i * n + j + 1) {
-                    return false;
-                }
+        for (int i = 0; i < n * n; i++) {
+            if (flattenTiles[i] != i + 1) {
+                return false;
             }
         }
 
@@ -96,17 +113,60 @@ public class Board {
 
     // does this board equal y?
     public boolean equals(Object y) {
-        return true;
+        return toString().equals(y.toString());
+    }
+
+    private Board createNewBoardBySwitchingTiles(int row, int col, int nextRow, int nextCol) {
+        int[][] newTiles = new int[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                newTiles[i][j] = tiles[i][j];
+            }
+        }
+
+        newTiles[row][col] = newTiles[nextRow][nextCol];
+        newTiles[nextRow][nextCol] = 0;
+
+        return new Board(newTiles);
     }
 
     // all neighboring boards
     public Iterable<Board> neighbors() {
-        return new Iterable<Board>() {
-            @Override
-            public Iterator<Board> iterator() {
-                return null;
+        List<Board> neighbors = new ArrayList<>();
+
+        // find zero
+        int row = 0;
+        int col = 0;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (tiles[i][j] == 0) {
+                    row = i;
+                    col = j;
+                }
             }
-        };
+        }
+
+        // top
+        if (row > 0) {
+            neighbors.add(createNewBoardBySwitchingTiles(row, col, row - 1, col));
+        }
+
+        // bottom
+        if (row < n - 1) {
+            neighbors.add(createNewBoardBySwitchingTiles(row, col, row + 1, col));
+        }
+
+        // left
+        if (col > 0) {
+            neighbors.add(createNewBoardBySwitchingTiles(row, col, row, col - 1));
+        }
+
+        // right
+        if (col < n - 1) {
+            neighbors.add(createNewBoardBySwitchingTiles(row, col, row, col + 1));
+        }
+
+        return neighbors;
     }
 
     // a board that is obtained by exchanging any pair of tiles
@@ -125,26 +185,24 @@ public class Board {
             n = in.readInt();
         }
 
-        int row = 0;
-        int col = 0;
-
         int[][] tiles = new int[n][n];
 
-        while (!in.isEmpty()) {
-            tiles[row][col] = in.readInt();
-
-            if (col == n - 1) {
-                row++;
-                col = 0;
-            } else {
-                col++;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                tiles[i][j] = in.readInt();
             }
         }
 
         Board board = new Board(tiles);
         int moves = board.manhattan();
         String r = board.toString();
-        StdOut.println(r);
+        StdOut.println("Original board: \n" + r);
+
+
+        for(Board neighbor: board.neighbors()) {
+            StdOut.println("Neighbor board: \n" + neighbor.toString());
+        }
+
 
     }
 
