@@ -11,7 +11,13 @@ public class Board {
     // create a board from an n-by-n array of tiles,
     // where tiles[row][col] = tile at (row, col)
     public Board(int[][] tiles) {
-        this.tiles = tiles;
+        int n = tiles.length;
+        this.tiles = new int[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                this.tiles[i][j] = tiles[i][j];
+            }
+        }
     }
 
     // string representation of this board
@@ -41,11 +47,12 @@ public class Board {
 
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                // 取余是为了 0 的情况
-                if (this.tiles[i][j] != (i * 3 + j + 1) % (n * n)) {
-                    count++;
+                // 0 不计数
+                if (this.tiles[i][j] != 0) {
+                    if (this.tiles[i][j] != i * n + j + 1) {
+                        count++;
+                    }
                 }
-
             }
         }
 
@@ -62,16 +69,14 @@ public class Board {
             for (int j = 0; j < n; j++) {
                 int result = this.tiles[i][j];
 
-                // 0 放在 n * n 的格子里
-                if (result == 0) {
-                    result = n * n;
+                // 0 不计数
+                if (result != 0) {
+                    int row = (result - 1) / n;
+                    int col = (result - 1) % n;
+
+                    distance += Math.abs(row - i);
+                    distance += Math.abs(col - j);
                 }
-
-                int row = (result - 1) / n;
-                int col = (result - 1) % n;
-
-                distance += Math.abs(row - i);
-                distance += Math.abs(col - j);
             }
         }
 
@@ -84,25 +89,17 @@ public class Board {
     }
 
     public boolean equals(Object y) {
-        return toString() == y.toString();
-    }
-
-    private int[][] copyTiles() {
-        int n = dimension();
-        int[][] newTiles = new int[n][n];
-        for (int i = 0; i < n; i++) {
-            for(int j = 0; j < n; j++) {
-                newTiles[i][j] = this.tiles[i][j];
-            }
+        if (dimension() != ((Board) y).dimension()) {
+            return false;
         }
-        return newTiles;
+        return toString() == y.toString();
     }
 
     private Board exchange(int row, int col, int nextRow, int nextCol) {
         int n = dimension();
         int[][] newTiles = new int[n][n];
         for (int i = 0; i < n; i++) {
-            for(int j = 0; j < n; j++) {
+            for (int j = 0; j < n; j++) {
                 newTiles[i][j] = this.tiles[i][j];
             }
         }
@@ -114,24 +111,26 @@ public class Board {
     }
 
     private Board neighborWithDirection(int row, int col, String direction) {
+        int n = dimension();
+
         switch (direction) {
             case "up":
-                if (row - 1 > 0) {
+                if (row > 0) {
                     return exchange(row, col, row - 1, col);
                 }
                 break;
             case "down":
-                if (row + 1 < 3) {
+                if (row + 1 < n) {
                     return exchange(row, col, row + 1, col);
                 }
                 break;
             case "left":
-                if (col - 1 > 0) {
+                if (col > 0) {
                     return exchange(row, col, row, col - 1);
                 }
                 break;
             case "right":
-                if (col + 1 < 3) {
+                if (col + 1 < n) {
                     return exchange(row, col, row, col + 1);
                 }
                 break;
@@ -190,48 +189,25 @@ public class Board {
     // a board that is obtained by exchanging any pair of tiles
     public Board twin() {
 
-        String[] directions = new String[]{"up", "bottom", "left", "right"};
-
         int n = dimension();
 
-        int row = -1;
-        int col = -1;
+        int row1 = -1;
+        int col1 = -1;
 
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                if (this.tiles[i][j] == 0) {
-                    row = i;
-                    col = j;
-                }
-            }
+        int row2 = -1;
+        int col2 = -1;
+
+        while (row1 == -1 || this.tiles[row1][col1] == 0) {
+            row1 = (int) Math.floor(Math.random() * n);
+            col1 = (int) Math.floor(Math.random() * n);
         }
 
-        while (this.tiles[row][col] == 0) {
-            row = (int) Math.random() * n;
-            col = (int) Math.random() * n;
+        while (row2 == -1 || this.tiles[row2][col2] == 0 || this.tiles[row1][col2] == this.tiles[row2][col2]) {
+            row2 = (int) Math.floor(Math.random() * n);
+            col2 = (int) Math.floor(Math.random() * n);
         }
 
-        // up
-        if (row > 0 && this.tiles[row - 1][col] != 0) {
-            return neighborWithDirection(row, col, "up");
-        }
-
-        // down
-        if (row < 2 && this.tiles[row + 1][col] != 0) {
-            return neighborWithDirection(row, col, "down");
-        }
-
-        // left
-        if (col > 0 && this.tiles[row][col - 1] != 0) {
-            return neighborWithDirection(row, col, "left");
-        }
-
-        // right
-        if (col < 2 && this.tiles[row][col + 1] != 0) {
-            return neighborWithDirection(row, col, "right");
-        }
-
-        return null;
+        return exchange(row1, col1, row2, col2);
     }
 
     public static void main(String[] args) {
@@ -249,7 +225,12 @@ public class Board {
 
         Board board = new Board(tiles);
 
-        StdOut.println(board.manhattan());
         StdOut.println(board.toString());
+
+        StdOut.println("neighbors: ");
+
+        for (Board neighbor: board.neighbors()) {
+            StdOut.println(neighbor.toString());
+        }
     }
 }

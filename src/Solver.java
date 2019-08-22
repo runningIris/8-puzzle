@@ -2,14 +2,14 @@ import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.MinPQ;
 import edu.princeton.cs.algs4.StdOut;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+
 
 public class Solver {
-    private Board initial;
-    private int moves;
-    private MinPQ<SearchNode> minPQ;
-    private List<SearchNode> solution;
+    private SearchNode result;
+    private boolean isSolvable;
 
     // find a solution to the initial board (using the A* algorithm)
     public Solver(Board initial) {
@@ -17,25 +17,33 @@ public class Solver {
             throw new IllegalArgumentException("the constructor argument initial should not be null");
         }
 
-        this.initial = initial;
-        if (!isSolvable()) {
-            throw new IllegalArgumentException("This board is not solvable.");
-        }
-
-        minPQ = new MinPQ<SearchNode>();
-        solution = new ArrayList<SearchNode>();
-
+        // initial board
+        MinPQ<SearchNode> minPQ = new MinPQ<SearchNode>();
         SearchNode init = new SearchNode();
         init.board = initial;
         init.moves = 0;
-
+        init.prev = null;
         minPQ.insert(init);
 
-        while(!minPQ.isEmpty()) {
-            SearchNode sn = minPQ.delMin();
-            solution.add(sn);
+        // twin board
+        Board initialTwin = initial.twin();
 
+        MinPQ<SearchNode> twinMinPQ = new MinPQ<SearchNode>();
+        SearchNode twin = new SearchNode();
+        twin.board = initialTwin;
+        twin.moves = 0;
+        init.prev = null;
+        twinMinPQ.insert(twin);
+
+
+        while (!minPQ.isEmpty() || !twinMinPQ.isEmpty()) {
+
+            SearchNode sn = minPQ.delMin();
+
+            // solved
             if (sn.board.isGoal()) {
+                isSolvable = true;
+                result = sn;
                 break;
             }
 
@@ -43,15 +51,30 @@ public class Solver {
                 SearchNode neighbor = new SearchNode();
                 neighbor.board = board;
                 neighbor.moves = sn.moves + 1;
+                neighbor.prev = sn;
                 minPQ.insert(neighbor);
             }
+
+            SearchNode twinSN = twinMinPQ.delMin();
+
+            // not solvable
+            if (twinSN.board.isGoal()) {
+                isSolvable = false;
+                break;
+            }
+
+            for (Board board: twinSN.board.neighbors()) {
+                SearchNode neighbor = new SearchNode();
+                neighbor.board = board;
+                neighbor.moves = twinSN.moves + 1;
+                neighbor.prev = sn;
+                twinMinPQ.insert(neighbor);
+            }
         }
-
-        // solved!
-
     }
 
     private static class SearchNode implements Comparable<SearchNode> {
+        private SearchNode prev;
         private Board board;
         private int moves;
         public int compareTo(Solver.SearchNode that) {
@@ -61,39 +84,30 @@ public class Solver {
 
     // is the initial board solvable?
     public boolean isSolvable() {
-        int n = initial.dimension();
-        int[] flattenTiles = new int[n * n];
-        int inversionCount = 0;
-
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                flattenTiles[i * n + j] = initial.tiles[j][i];
-            }
-        }
-
-        // use tiles' inversion to figure out whether the board is solvable.
-        for (int i = 0; i < n * n; i++) {
-            for (int j = i + 1; j < n * n; j++) {
-                // StdOut.println(i + ", " + j);
-                if (flattenTiles[i] > 0 && flattenTiles[j] > 0 && flattenTiles[i] > flattenTiles[j]) {
-                    inversionCount++;
-                }
-            }
-        }
-        return inversionCount % 2 != 0;
+        return isSolvable;
     }
 
     // min number of moves to solve initial board
     public int moves() {
-        return solution.get(solution.size() - 1).moves;
+        return result.moves;
     }
 
     // sequence of boards in a shortest solution
     public Iterable<Board> solution() {
-        List<Board> all = new ArrayList<>();
-        for (SearchNode s: solution) {
-            all.add(s.board);
+        int len = result.moves + 1;
+        SearchNode current = result;
+
+        Board[] steps = new Board[len];
+
+        for (int i = 0; i < len; i++) {
+            steps[len - i - 1] = current.board;
+            current = current.prev;
         }
+
+        List<Board> all = new ArrayList<>();
+
+        Collections.addAll(all, steps);
+
         return all;
     }
 
@@ -107,6 +121,7 @@ public class Solver {
             for (int j = 0; j < n; j++)
                 tiles[i][j] = in.readInt();
         Board initial = new Board(tiles);
+
 
         // solve the puzzle
         Solver solver = new Solver(initial);
