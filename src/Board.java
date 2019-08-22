@@ -6,7 +6,7 @@ import java.util.List;
 
 public class Board {
 
-    public int[][] tiles;
+    private int[][] tiles;
 
     // create a board from an n-by-n array of tiles,
     // where tiles[row][col] = tile at (row, col)
@@ -81,6 +81,10 @@ public class Board {
     // is this board the goal board
     public boolean isGoal() {
         return hamming() == 0;
+    }
+
+    public boolean equals(Object y) {
+        return toString() == y.toString();
     }
 
     private int[][] copyTiles() {
@@ -185,6 +189,48 @@ public class Board {
 
     // a board that is obtained by exchanging any pair of tiles
     public Board twin() {
+
+        String[] directions = new String[]{"up", "bottom", "left", "right"};
+
+        int n = dimension();
+
+        int row = -1;
+        int col = -1;
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (this.tiles[i][j] == 0) {
+                    row = i;
+                    col = j;
+                }
+            }
+        }
+
+        while (this.tiles[row][col] == 0) {
+            row = (int) Math.random() * n;
+            col = (int) Math.random() * n;
+        }
+
+        // up
+        if (row > 0 && this.tiles[row - 1][col] != 0) {
+            return neighborWithDirection(row, col, "up");
+        }
+
+        // down
+        if (row < 2 && this.tiles[row + 1][col] != 0) {
+            return neighborWithDirection(row, col, "down");
+        }
+
+        // left
+        if (col > 0 && this.tiles[row][col - 1] != 0) {
+            return neighborWithDirection(row, col, "left");
+        }
+
+        // right
+        if (col < 2 && this.tiles[row][col + 1] != 0) {
+            return neighborWithDirection(row, col, "right");
+        }
+
         return null;
     }
 
