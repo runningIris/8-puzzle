@@ -6,7 +6,7 @@ import java.util.List;
 
 public class Board {
 
-    private int[][] tiles;
+    private final int[][] tiles;
 
     // create a board from an n-by-n array of tiles,
     // where tiles[row][col] = tile at (row, col)
@@ -23,15 +23,17 @@ public class Board {
     // string representation of this board
     public String toString() {
         int n = dimension();
-        String result = n + "\n";
+        StringBuilder result = new StringBuilder();
+        result.append(n);
+        result.append("\n");
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                result += this.tiles[i][j];
-                result += this.tiles[i][j] < 10 ? "  " : " ";
+                result.append(this.tiles[i][j]);
+                result.append(this.tiles[i][j] < 10 ? "  " : " ");
             }
-            result += "\n";
+            result.append("\n");
         }
-        return result;
+        return result.toString();
     }
 
     // board dimension n
@@ -89,10 +91,31 @@ public class Board {
     }
 
     public boolean equals(Object y) {
-        if (dimension() != ((Board) y).dimension()) {
+        if (y == null) {
             return false;
         }
-        return toString() == y.toString();
+
+        if (y.getClass() != Board.class) {
+            return false;
+        }
+
+        Board x = (Board) y;
+
+        int n = dimension();
+
+        if (n != x.dimension()) {
+            return false;
+        }
+
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (this.tiles[i][j] != x.tiles[i][j]) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private Board exchange(int row, int col, int nextRow, int nextCol) {
@@ -191,20 +214,16 @@ public class Board {
 
         int n = dimension();
 
-        int row1 = -1;
-        int col1 = -1;
+        int row1 = 0;
+        int col1 = 0;
+        int row2 = n - 1;
+        int col2 = 0;
 
-        int row2 = -1;
-        int col2 = -1;
-
-        while (row1 == -1 || this.tiles[row1][col1] == 0) {
-            row1 = (int) Math.floor(Math.random() * n);
-            col1 = (int) Math.floor(Math.random() * n);
+        while (this.tiles[row1][col1] == 0) {
+            col1++;
         }
-
-        while (row2 == -1 || this.tiles[row2][col2] == 0 || this.tiles[row1][col2] == this.tiles[row2][col2]) {
-            row2 = (int) Math.floor(Math.random() * n);
-            col2 = (int) Math.floor(Math.random() * n);
+        while (this.tiles[row2][col2] == 0) {
+            col2++;
         }
 
         return exchange(row1, col1, row2, col2);
@@ -223,14 +242,9 @@ public class Board {
             }
         }
 
-        Board board = new Board(tiles);
+        Board board1 = new Board(tiles);
+        Board board2 = new Board(tiles);
 
-        StdOut.println(board.toString());
-
-        StdOut.println("neighbors: ");
-
-        for (Board neighbor: board.neighbors()) {
-            StdOut.println(neighbor.toString());
-        }
+        StdOut.println(board1.equals(board2));
     }
 }
