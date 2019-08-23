@@ -48,11 +48,13 @@ public class Solver {
             }
 
             for (Board board: sn.board.neighbors()) {
-                SearchNode neighbor = new SearchNode();
-                neighbor.board = board;
-                neighbor.moves = sn.moves + 1;
-                neighbor.prev = sn;
-                minPQ.insert(neighbor);
+                if (sn.prev == null || !board.equals(sn.prev.board)) {
+                    SearchNode neighbor = new SearchNode();
+                    neighbor.board = board;
+                    neighbor.moves = sn.moves + 1;
+                    neighbor.prev = sn;
+                    minPQ.insert(neighbor);
+                }
             }
 
             SearchNode twinSN = twinMinPQ.delMin();
@@ -64,11 +66,14 @@ public class Solver {
             }
 
             for (Board board: twinSN.board.neighbors()) {
-                SearchNode neighbor = new SearchNode();
-                neighbor.board = board;
-                neighbor.moves = twinSN.moves + 1;
-                neighbor.prev = sn;
-                twinMinPQ.insert(neighbor);
+
+                if (twinSN.prev == null || !board.equals(twinSN.prev.board)) {
+                    SearchNode neighbor = new SearchNode();
+                    neighbor.board = board;
+                    neighbor.moves = twinSN.moves + 1;
+                    neighbor.prev = sn;
+                    twinMinPQ.insert(neighbor);
+                }
             }
         }
     }
@@ -89,11 +94,18 @@ public class Solver {
 
     // min number of moves to solve initial board
     public int moves() {
+        if (!isSolvable) {
+            return -1;
+        }
         return result.moves;
     }
 
     // sequence of boards in a shortest solution
     public Iterable<Board> solution() {
+        if (!isSolvable) {
+            return null;
+        }
+
         int len = result.moves + 1;
         SearchNode current = result;
 

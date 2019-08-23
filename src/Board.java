@@ -95,7 +95,7 @@ public class Board {
             return false;
         }
 
-        if (y.getClass() != Board.class) {
+        if (y.getClass() != this.getClass()) {
             return false;
         }
 
